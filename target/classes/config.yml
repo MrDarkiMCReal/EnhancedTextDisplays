@@ -1,0 +1,22 @@
+textdisplays:
+  customKey:
+    name: "peenus2"
+    uuid: "131270d3-f453-32a4-ba7e-3099ae04a73b"
+    contents:
+      - "dfgdfg"
+      - "dfgdfg"
+      - "dgddfg"
+    settings:
+      scale: 1
+      backgroundColour: 144 #-1 for disable
+    location:
+      world: world
+      x: 124
+      y: 22
+      z: 24
+      yaw: 0
+      pitch: 0
+    playerview:
+      byYaw: true
+      byPitch: true
+    clickEvent: 'none'

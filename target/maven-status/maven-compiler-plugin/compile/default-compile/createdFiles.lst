@@ -1,0 +1,6 @@
+org\mrdarkimc\enhancedtextdisplays\displays\interfaces\ITextDisplay.class
+org\mrdarkimc\enhancedtextdisplays\EnhancedTextDisplays.class
+org\mrdarkimc\enhancedtextdisplays\displays\TDisplay.class
+org\mrdarkimc\enhancedtextdisplays\displays\CustomTextDisplay.class
+org\mrdarkimc\enhancedtextdisplays\commands\Command.class
+org\mrdarkimc\enhancedtextdisplays\displays\DisplayHandler.class

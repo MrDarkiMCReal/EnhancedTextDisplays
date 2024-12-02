@@ -1,0 +1,10 @@
+name: EnhancedTextDisplays
+version: '${project.version}'
+main: org.mrdarkimc.enhancedtextdisplays.EnhancedTextDisplays
+api-version: '1.19'
+softdepend:
+  - ajLeaderboards
+  - PlaceholdersAPI
+commands:
+  try:
+    description: Main plugin command

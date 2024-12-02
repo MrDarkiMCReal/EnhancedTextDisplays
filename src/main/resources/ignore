@@ -1,0 +1,34 @@
+public class MyPlugin {
+
+    public void toggleBackgroundTextDisplay(TextDisplay textDisplay, boolean enableBackground) {
+        try {
+            // Используем рефлексию для доступа к полям NMS (если это требуется)
+            Class<?> entityTextDisplayClass = textDisplay.getClass();
+
+            // Пытаемся получить поле для фона (это может изменяться в разных версиях)
+            Field backgroundField = entityTextDisplayClass.getDeclaredField("background");
+            backgroundField.setAccessible(true);
+
+            // Устанавливаем нужное значение фона
+            backgroundField.set(textDisplay, enableBackground);
+
+            // Применение изменений, если нужно
+            textDisplay.update();
+        } catch (Exception e) {
+            e.printStackTrace();  // Логируем исключения, если они возникнут
+        }
+    }
+
+    // Пример создания и использования
+    public void example(ServerLevel world) {
+        Vec3 position = new Vec3(0, 100, 0);
+        TextDisplay textDisplay = new TextDisplay(position, new TextComponent("Hello, world!"));
+
+        // Включаем или выключаем фон
+        toggleBackgroundTextDisplay(textDisplay, false); // Без фона
+        toggleBackgroundTextDisplay(textDisplay, true);  // С фоном
+
+        // Добавляем в мир
+        world.addEntity(textDisplay);
+    }
+}
