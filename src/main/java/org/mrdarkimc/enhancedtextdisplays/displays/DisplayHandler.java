@@ -4,12 +4,7 @@ import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.TextDisplay;
-import org.bukkit.util.Transformation;
-import org.joml.Vector3f;
+import org.bukkit.entity.*;
 import org.mrdarkimc.SatanicLib.Utils;
 import org.mrdarkimc.enhancedtextdisplays.EnhancedTextDisplays;
 
@@ -21,8 +16,27 @@ public class DisplayHandler {
     public static NamespacedKey key = new NamespacedKey(EnhancedTextDisplays.getInstance(),"EnhancedTextDisplay");
     public DisplayHandler() {
         deserealize();
-        handleOldDisplays();
-
+        //handleOldDisplays();
+        removeOldDisplays();
+        spawnDisplays();
+            }
+    void removeOldDisplays(){
+        for (String key : map.keySet()) {
+            Chunk chunk = getDisplayByName(key).getLocation().getChunk();
+            boolean isloaded = chunk.isLoaded();
+            if (!isloaded) {
+                chunk.load();
+                //
+                Arrays.stream(chunk.getEntities()).filter(entity -> entity.getPersistentDataContainer().has(DisplayHandler.key)).forEach(Entity::remove);
+                //
+                chunk.unload();
+            }else {
+                Arrays.stream(chunk.getEntities()).filter(entity -> entity.getPersistentDataContainer().has(DisplayHandler.key)).forEach(Entity::remove);
+            }
+        }
+    }
+    void spawnDisplays(){
+        map.forEach((k,v) -> v.spawnEntity());
     }
     public void handleOldDisplays(){ //todo load /unload worlds?
         for (World world : Bukkit.getServer().getWorlds()) {
@@ -66,13 +80,7 @@ public class DisplayHandler {
             return;
         Set<String> set = config.getConfigurationSection("textdisplays").getKeys(false);
         for (String key : set) {
-            List<String> list1 = config.getStringList("textdisplays." + key + ".contents");
-            list1.replaceAll(line -> {
-                Utils.translateHex(line);
-                line = line + "\n";
-                PlaceholderAPI.setPlaceholders(null,line);
-                return line;
-            });
+            List<String> list1 = deserealizeContents(key);
             String world =  config.getString("textdisplays." + key + ".location.world");
             int x = config.getInt("textdisplays." + key + ".location.x");
             int y = config.getInt("textdisplays." + key + ".location.y");
@@ -83,6 +91,16 @@ public class DisplayHandler {
             map.put(key, new CustomTextDisplay(key,list1,new Location(Bukkit.getWorld(world),x,y,z,yaw,pitch),scale));
         }
         Bukkit.getLogger().info("[EnhancedTextDisplays] Successfully registered " + map.size() + " text-displays");
+    }
+    public static List<String> deserealizeContents(String key){
+        List<String> list1 = EnhancedTextDisplays.config.get().getStringList("textdisplays." + key + ".contents");
+        list1.replaceAll(line -> {
+            Utils.translateHex(line);
+            line = line + "\n";
+            PlaceholderAPI.setPlaceholders(null,line);
+            return line;
+        });
+        return list1;
     }
     public static String translateHex(String message) {
         Pattern pattern = Pattern.compile("&#[0-9A-Fa-f]{6}");

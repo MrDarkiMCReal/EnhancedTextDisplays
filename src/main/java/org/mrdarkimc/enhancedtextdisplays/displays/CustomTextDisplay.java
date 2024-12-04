@@ -1,10 +1,11 @@
 package org.mrdarkimc.enhancedtextdisplays.displays;
 
 import me.clip.placeholderapi.PlaceholderAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -12,10 +13,10 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.util.Transformation;
 import org.joml.Vector3f;
 import org.mrdarkimc.SatanicLib.Utils;
+import org.mrdarkimc.enhancedtextdisplays.EnhancedTextDisplays;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public class CustomTextDisplay implements Serializable {
@@ -38,73 +39,104 @@ public class CustomTextDisplay implements Serializable {
     public Location getLocation() {
         return location;
     }
+    //todo почему то он пересохраняет конфиг с интами.
 
     public CustomTextDisplay(String name, List<String> contents, Location location, double scale) {
         this.name = name;
         this.contents = contents;
         this.location = location;
         this.scale = scale;
-        spawnEntity();
+        //spawnEntity();
     }
-    public void spawnEntity(){
+
+    public void spawnEntity() {
         textDisplay = (TextDisplay) location.getWorld().spawnEntity(location, EntityType.TEXT_DISPLAY);
-        textDisplay.getPersistentDataContainer().set(DisplayHandler.key, PersistentDataType.BOOLEAN,true);
+        textDisplay.getPersistentDataContainer().set(DisplayHandler.key, PersistentDataType.BOOLEAN, true);
+        setRotation(location.getYaw(),location.getPitch());
+        applyText(contents);
+    }
+
+    public void applyText(List<String> contents) {
+        textDisplay.setText("");
         StringBuilder builder = new StringBuilder();
         for (String content : contents) {
-            builder.append(PlaceholderAPI.setPlaceholders(null,Utils.translateHex(content)));
+            builder.append(PlaceholderAPI.setPlaceholders(null, Utils.translateHex(content)));
             builder.append("\n");
         }
         textDisplay.setText(builder.toString());
+        Bukkit.getLogger().info(" [ETD] - updated");
     }
-    public void movehere(Player player){
+
+    public void movehere(Player player) {
         //logic to get Entity by its name from config
         Location loc = player.getLocation();
         textDisplay.teleport(loc);
+        setRotation(player.getLocation().getYaw(), 0);
         location = loc;
         //todo serealize
+    }
+
+    void saveLocation(Location loc) {
+        location = loc;
+        FileConfiguration config = EnhancedTextDisplays.config.get();
+        Bukkit.getLogger().info("saving key: " + name);
+        config.set("textdisplays." + name + ".location.world", loc.getWorld().getName());
+        config.set("textdisplays." + name + ".location.x", loc.getX());
+        config.set("textdisplays." + name + ".location.y", loc.getY());
+        config.set("textdisplays." + name + ".location.z", loc.getZ());
+        config.set("textdisplays." + name + ".location.yaw", loc.getYaw());
+        config.set("textdisplays." + name + ".location.pitch", loc.getPitch());
+        EnhancedTextDisplays.config.saveConfig();
 
     }
-    public void setPitch(float pitch){
+
+    public void setPitch(float pitch) {
         float originalyaw = textDisplay.getLocation().getYaw();
         //double originalpitch = display.getLocation().getPitch();
-        textDisplay.setRotation(originalyaw,pitch);
-        location = textDisplay.getLocation();
+        textDisplay.setRotation(originalyaw, pitch);
+        saveLocation(textDisplay.getLocation());
     }
-    public void setYaw(float yaw){
+
+    public void setYaw(float yaw) {
         //float originalyaw = display.getLocation().getYaw();
         float originalpitch = textDisplay.getLocation().getPitch();
-        textDisplay.setRotation(yaw,originalpitch);
-        location = textDisplay.getLocation();
+        textDisplay.setRotation(yaw, originalpitch);
+        saveLocation(textDisplay.getLocation());
     }
-    public void setRotation(float yaw, float pitch){
-        textDisplay.setRotation(yaw,pitch);
 
+    public void setRotation(float yaw, float pitch) {
+        textDisplay.setRotation(yaw, pitch);
+        saveLocation(textDisplay.getLocation());
     }
-    public void setText(String text){
+
+    public void setText(String text) {
         textDisplay.setText(Utils.translateHex(textDisplay.getText().isEmpty() ? text + "\n" : textDisplay.getText() + text + "\n"));
     }
-    public void setScale(float size){
+
+    public void setScale(float size) {
         Transformation transfor = textDisplay.getTransformation();
-        Vector3f scale =  transfor.getScale();
+        Vector3f scale = transfor.getScale();
         scale.set(size);
         textDisplay.setTransformation(transfor);
     }
-    public void setBackground(boolean trueOrfalse){
-       textDisplay.setDefaultBackground(false);
+
+    public void setBackground(boolean trueOrfalse) {
+        textDisplay.setDefaultBackground(false);
     }
-    public void setLocation(Location newlocation){
+
+    public void setLocation(Location newlocation) {
         location = newlocation;
     }
 
-public void update(){
-        textDisplay.remove();
-        spawnEntity();
-}
+    public void deserealizeAndUpdateContents(String name) {
+        contents = DisplayHandler.deserealizeContents(name);
+        applyText(contents);
+    }
 
-    public void attach(Player player){
+    public void attach(Player player) {
         BlockFace face = player.getTargetBlockFace(5);
-        if (player.getTargetBlockExact(3)==null) {
-            player.sendMessage(ChatColor.RED +  "Block not found. Stay closer"); //todo hardcode
+        if (player.getTargetBlockExact(3) == null) {
+            player.sendMessage(ChatColor.RED + "Block not found. Stay closer"); //todo hardcode
             return;
         }
         Location newlocation = player.getTargetBlockExact(3).getLocation();
@@ -113,78 +145,65 @@ public void update(){
             //у игрока нет UP & DOWN
             //todo сначала тп потом сетаем ротейшон
             case "UP":
-                player.sendMessage("facing up");
-                player.sendMessage("new location: " + newlocation);
-                player.sendMessage("current yaw is: " + location.getYaw());
-                player.sendMessage("current pitch is: " + location.getPitch());
-
-                newlocation.setZ(newlocation.getY()+0.01);
+                newlocation.setZ(newlocation.getY() + 0.01);
                 textDisplay.teleport(newlocation);
 
 
                 setPitch(-90);
+                newlocation.setPitch(-90);
                 setLocation(newlocation);
+                saveLocation(newlocation);
                 break;
             case "DOWN":
-                player.sendMessage("facing down");
-                player.sendMessage("new location: " + newlocation);
-                player.sendMessage("current yaw is: " + location.getYaw());
-                player.sendMessage("current pitch is: " + location.getPitch());
-
-                newlocation.setZ(newlocation.getY()-0.05);
+                newlocation.setZ(newlocation.getY() - 0.05);
                 textDisplay.teleport(newlocation);
 
                 setPitch(90);
+                newlocation.setPitch(90);
                 setLocation(newlocation);
+                saveLocation(newlocation);
                 break;
             case "EAST":
-                player.sendMessage("facing east");
-                player.sendMessage("new location: " + newlocation);
-                player.sendMessage("current yaw is: " + location.getYaw());
-                player.sendMessage("current pitch is: " + location.getPitch());
-
-                newlocation.setX(newlocation.getX()+1.05);
+                newlocation.setX(newlocation.getX() + 1.05);
                 textDisplay.teleport(newlocation);
                 setPitch(0);
                 setYaw(270);
+
+                newlocation.setYaw(270);
+                newlocation.setPitch(0);
                 setLocation(newlocation);
+                saveLocation(newlocation);
 
                 break;
             case "WEST":
-                player.sendMessage("facing west");
-                player.sendMessage("new location: " + newlocation);
-                player.sendMessage("current yaw is: " + location.getYaw());
-                player.sendMessage("current pitch is: " + location.getPitch());
-
-                newlocation.setX(newlocation.getX()-0.05);
+                newlocation.setX(newlocation.getX() - 0.05);
                 textDisplay.teleport(newlocation);
                 setPitch(0);
                 setYaw(90);
+                newlocation.setYaw(90);
+                newlocation.setPitch(0);
                 setLocation(newlocation);
+                saveLocation(newlocation);
                 break;
             case "SOUTH":
-                player.sendMessage("facing south");
-                player.sendMessage("new location: " + newlocation);
-                player.sendMessage("current yaw is: " + location.getYaw());
-                player.sendMessage("current pitch is: " + location.getPitch());
-
-                newlocation.setZ(newlocation.getZ()+1.05);
+                newlocation.setZ(newlocation.getZ() + 1.05);
                 textDisplay.teleport(newlocation);
                 setPitch(0);
                 setYaw(360);
+                newlocation.setYaw(360);
+                newlocation.setPitch(0);
                 setLocation(newlocation);
+                saveLocation(newlocation);
                 break;
             case "NORTH":
-                player.sendMessage("facing north");
-                player.sendMessage("new location: " + newlocation);
-                player.sendMessage("current yaw is: " + location.getYaw());
-                player.sendMessage("current pitch is: " + location.getPitch());
-
-                newlocation.setZ(newlocation.getZ()-0.05);
+                newlocation.setZ(newlocation.getZ() - 0.05);
                 textDisplay.teleport(newlocation);
                 setPitch(0);
                 setYaw(180);
+                newlocation.setYaw(180);
+                newlocation.setPitch(0);
                 setLocation(newlocation);
+                saveLocation(newlocation);
                 break;
         }
     }

@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -68,6 +69,9 @@ public class Command implements CommandExecutor {
             case "attach":
                 handler.getDisplayByName(strings[1]).attach(player);
                 break;
+            case "update":
+                handler.getDisplayByName(strings[1]).deserealizeAndUpdateContents(strings[1]);
+                break;
             case "setYaw":
                 handler.getDisplayByName(strings[1]).setYaw(Float.parseFloat(strings[2]));
                 break;
@@ -91,6 +95,12 @@ public class Command implements CommandExecutor {
             case "setScale":
                 handler.getDisplayByName(strings[1]).setScale(Float.parseFloat(strings[2]));
                 break;
+            case "removeNear":
+                int radius = Integer.parseInt(strings[1]);
+                player.getLocation().getNearbyEntities(radius,radius,radius).stream().filter(entity -> entity.getPersistentDataContainer().has(DisplayHandler.key)).forEach(Entity::remove);
+                player.sendMessage("[ETD] Removed. Warning: entities in unloaded chunks may not be deleted");
+                break;
+                //
         }
         return true;
     }
