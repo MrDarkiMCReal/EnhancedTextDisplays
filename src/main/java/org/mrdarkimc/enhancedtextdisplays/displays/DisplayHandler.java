@@ -38,39 +38,68 @@ public class DisplayHandler {
     void spawnDisplays(){
         map.forEach((k,v) -> v.spawnEntity());
     }
-    public void handleOldDisplays(){ //todo load /unload worlds?
-        for (World world : Bukkit.getServer().getWorlds()) {
-            world.getEntities().stream().filter(e -> e.getPersistentDataContainer().has(key)).forEach(Entity::remove);
-        }
-    }
     public CustomTextDisplay getDisplayByName(String name){
         return map.get(name);
     }
-    public CustomTextDisplay createCustomTextDisplay(Player player, String name){
+    public List<String> getListByPage(int page){
+        //displays 7 of elements
+        page = page-1;
+        page = (page*7);
+        List<String> displays = new ArrayList<>(map.keySet());
+        List<String> newList = new ArrayList<>();
+        for (int i = page; i < page+7; i++) {
+            if (i < displays.size()) {
+                newList.add(displays.get(i));
+            }else {
+                break;
+            }
+        }
+        return newList;
+    }
+    public int maxPage(){
+      return (int) Math.ceil((double) map.keySet().size() /7);
+    }
+    public CustomTextDisplay createCustomTextDisplay(Player player, String name, List<String> stringlist){
         ConfigurationSection file = EnhancedTextDisplays.config.get().getConfigurationSection("textdisplays");
-        if (file == null) {
-            Location loc = player.getLocation();
-            loc.setPitch(0);
-            CustomTextDisplay textDisplay = new CustomTextDisplay(name,List.of(name),loc,1);
-            map.put(name,textDisplay);
-            EnhancedTextDisplays.config.get().set("textdisplays." + name,textDisplay);
-            return textDisplay;
+        if (file == null){
+            file = EnhancedTextDisplays.config.get().createSection("textdisplays");
         }
-        if (file.getKeys(false).contains(name)){
-        player.sendMessage("[ETD] This name is already taken");
-        return null;
-        }else{
-            Location loc = player.getLocation();
-            loc.setPitch(0);
-            CustomTextDisplay textDisplay = new CustomTextDisplay(name,List.of(name),loc,1);
-            map.put(name,textDisplay);
-            EnhancedTextDisplays.config.get().set("textdisplays." + name,textDisplay);
-            return textDisplay;
+        if (file.contains(name)){
+            player.sendMessage(" ");
+            player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
+            player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EThis name is already taken"));
+            player.sendMessage(" ");
+            return null;
         }
+        Location loc = player.getLocation();
+        loc.setPitch(0);
+        CustomTextDisplay textDisplay = new CustomTextDisplay(name,stringlist,loc,1);
+        map.put(name,textDisplay);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".contents",stringlist);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.scale",1);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.billboard","fixed");
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.updateTime",-1);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.alignment","center");
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.lineWidth",250);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.pivotPoint.x",0);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.pivotPoint.y",0);
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.pivotPoint.z",0);
+
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.world",player.getLocation().getWorld().getName());
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.x",player.getLocation().getX());
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.y",player.getLocation().getY());
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.z",player.getLocation().getZ());
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.yaw",player.getLocation().getYaw());
+        EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.pitch",player.getLocation().getPitch());
+        EnhancedTextDisplays.config.saveConfig();
+        textDisplay.spawnEntity();
+        return textDisplay;
     }
     public void remove(String name){
+        map.get(name).removeFromWorld();
         map.remove(name);
         EnhancedTextDisplays.config.get().set("textdisplays." + name,null);
+        EnhancedTextDisplays.config.saveConfig();
     }
 
     public final Map<String,CustomTextDisplay> map = new HashMap<>();
@@ -82,9 +111,9 @@ public class DisplayHandler {
         for (String key : set) {
             List<String> list1 = deserealizeContents(key);
             String world =  config.getString("textdisplays." + key + ".location.world");
-            int x = config.getInt("textdisplays." + key + ".location.x");
-            int y = config.getInt("textdisplays." + key + ".location.y");
-            int z = config.getInt("textdisplays." + key + ".location.z");
+            double x = config.getDouble("textdisplays." + key + ".location.x");
+            double y = config.getDouble("textdisplays." + key + ".location.y");
+            double z = config.getDouble("textdisplays." + key + ".location.z");
             double scale = config.getDouble("textdisplays." + key + ".settings.scale");
             float yaw = (float) config.getDouble("textdisplays." + key + ".location.yaw");
             float pitch = (float) config.getDouble("textdisplays." + key + ".location.pitch");
@@ -98,6 +127,15 @@ public class DisplayHandler {
             Utils.translateHex(line);
             line = line + "\n";
             PlaceholderAPI.setPlaceholders(null,line);
+            return line;
+        });
+        return list1;
+    }
+    public static List<String> deserealizeRawContents(String key){
+        List<String> list1 = EnhancedTextDisplays.config.get().getStringList("textdisplays." + key + ".contents");
+        list1.replaceAll(line -> {
+            Utils.translateHex(line);
+            line = line + "\n";
             return line;
         });
         return list1;

@@ -1,0 +1,49 @@
+builders:
+  header:
+    - 'empty'
+    - 'pageNumber'
+  formattedTextDisplay:
+    - 'format,tp,middle,summon'
+  footer:
+    - 'prev,middle,next'
+tags:
+  empty:
+    text: " "
+  pageNumber:
+    text: "        &#5591CBList of text displays. Page #{page}"
+  format:
+    text: "  &#5591CB| &#5E7ECF{name}"
+  tp:
+    text: " &#D03E3E[tp] "
+    hover-event:
+      text:
+        - "&#838383Click to teleport to this holo"
+    click-event:
+      type: "RUN_COMMAND"
+      output: "/try tp {name}"
+  middle:
+    text: " &#838383| "
+  summon:
+    text: " &#42BA7F[summon] "
+    hover-event:
+      text:
+        - "&#838383Click to summon this holo"
+    click-event:
+      type: "RUN_COMMAND"
+      output: "/try summon {name}"
+  prev:
+    text: " &#5591CB[previous] "
+    hover-event:
+      text:
+        - "&#838383Click to see previous page this holo"
+    click-event:
+      type: "RUN_COMMAND"
+      output: "/try list {page}"
+  next:
+    text: " &#5591CB[next] "
+    hover-event:
+      text:
+        - "&#838383Click to see next page this holo"
+    click-event:
+      type: "RUN_COMMAND"
+      output: "/try list {page}"

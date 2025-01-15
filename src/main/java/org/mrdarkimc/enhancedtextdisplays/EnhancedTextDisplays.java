@@ -15,6 +15,9 @@ public final class EnhancedTextDisplays extends JavaPlugin {
     }
     public DisplayHandler handler;
     public static Configs config;
+    public static Configs chattags;
+
+    public String commandName;
 
     public DisplayHandler getHandler() {
         return handler;
@@ -24,11 +27,13 @@ public final class EnhancedTextDisplays extends JavaPlugin {
     public void onEnable() {
         instance = this;
         SatanicLib.setupLib(this);
+        commandName = "try";
         config = Configs.Defaults.setupConfig();
+        chattags = Configs.Defaults.setupChatTags();
 
         Utils.startUp("EnhancedTextDisplays");
         handler = new DisplayHandler();
-        getServer().getPluginCommand("try").setExecutor(new Command());
+        getServer().getPluginCommand(commandName).setExecutor(new Command());
 
         // Plugin startup logic
 

@@ -1,14 +1,27 @@
+prefixOffsets:
+  default: 5
+  fury: 6
+  hellhound: 6
+
 textdisplays:
   customKey:
-    name: "peenus2"
-    uuid: "131270d3-f453-32a4-ba7e-3099ae04a73b"
     contents:
-      - "dfgdfg"
-      - "dfgdfg"
-      - "dgddfg"
+      - "  №1 VIP MrDarkiMC         $100,000  "
+      - "  №2 PREMIUM CoolGuy       $100,000  "
+      - "  №3 VIP MiniPig2345223    $100,000  " # {distance=10} - будет заменяться на 10 пробелов + prefixOffset + nick.length
+      # %ajlb_lb_vault_eco_balance_fixed_1_alltime_name% - это завернуть в плейсхолдер, который парсит по нику игрока
+      #далее парсит по игроку его префикс, получает его оффсет. По оффсету добавляется пробелы
     settings:
       scale: 1
       backgroundColour: 144 #-1 for disable
+      billboard: horizontal
+      updateTime: 3000 #-1 for disable
+      alignment: left # default: center
+      lineWidth: 300 # default 250
+      pivotPoint:
+        x: 0
+        y: -0.9
+        z: 0
     location:
       world: world
       x: 124
@@ -16,7 +29,3 @@ textdisplays:
       z: 24
       yaw: 0
       pitch: 0
-    playerview:
-      byYaw: true
-      byPitch: true
-    clickEvent: 'none'

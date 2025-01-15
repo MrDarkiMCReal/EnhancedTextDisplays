@@ -4,3 +4,4 @@ org\mrdarkimc\enhancedtextdisplays\displays\TDisplay.class
 org\mrdarkimc\enhancedtextdisplays\displays\CustomTextDisplay.class
 org\mrdarkimc\enhancedtextdisplays\commands\Command.class
 org\mrdarkimc\enhancedtextdisplays\displays\DisplayHandler.class
+org\mrdarkimc\enhancedtextdisplays\displays\CustomTextDisplay$1.class
