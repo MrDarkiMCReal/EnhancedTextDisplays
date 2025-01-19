@@ -18,6 +18,7 @@ textdisplays:
       updateTime: 3000 #-1 for disable
       alignment: left # default: center
       lineWidth: 300 # default 250
+      text-shadow: false
       pivotPoint:
         x: 0
         y: -0.9

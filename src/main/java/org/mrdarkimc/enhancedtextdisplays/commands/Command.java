@@ -1,9 +1,8 @@
 package org.mrdarkimc.enhancedtextdisplays.commands;
 
-import net.kyori.adventure.text.Component;
 import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -13,7 +12,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.mrdarkimc.SatanicLib.TagBuilderGetter;
 import org.mrdarkimc.SatanicLib.Utils;
-import org.mrdarkimc.SatanicLib.chat.ChatUtils;
 import org.mrdarkimc.enhancedtextdisplays.EnhancedTextDisplays;
 import org.mrdarkimc.enhancedtextdisplays.displays.CustomTextDisplay;
 import org.mrdarkimc.enhancedtextdisplays.displays.DisplayHandler;
@@ -24,11 +22,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Command implements CommandExecutor {
-    DisplayHandler myHandler; //todo разобраться что с сылками не так, когда присваиваешь
-    //todo EnhancedTextDisplays.instance.handler = new DisplayHandler();
-    public Command() {
-        myHandler = EnhancedTextDisplays.getInstance().getHandler();
 
+
+    public Command() {
     }
 
     @Override
@@ -39,12 +35,12 @@ public class Command implements CommandExecutor {
             player = (Player) commandSender;
         }
         if (commandSender instanceof ConsoleCommandSender) {
-            sender = (ConsoleCommandSender)commandSender;
+            sender = (ConsoleCommandSender) commandSender;
         }
         ItemStack stack = player.getInventory().getItemInMainHand();
         if (!player.hasPermission("EnhancedTD.admin"))
             return true;
-        if (!(strings.length > 0)){
+        if (!(strings.length > 0)) {
             player.sendMessage(" ");
             player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
             player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " create <name> <line1 \\n line2> - create a holo");
@@ -70,7 +66,7 @@ public class Command implements CommandExecutor {
                 player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " setYaw <name> <yaw> - sets yaw");
                 player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " setPitch <name> <pitch> - sets pitch");
                 player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " setRotation <name> <yaw> <pitch> - sets rotation");
-                player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " setText <name> <updated text> - sets the yaw and pitch");
+                //player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " setText <name> <updated text> - sets the yaw and pitch");
                 player.sendMessage(ChatColor.GRAY + "  /" + command.getName() + " setScale <name> <scale>");
                 player.sendMessage(" ");
                 return true;
@@ -92,8 +88,14 @@ public class Command implements CommandExecutor {
                     builder.append(strings[i]);
                     builder.append(" ");
                 }
+
                 String name = strings[1];
-                List<String> stringlist = Arrays.stream(builder.toString().split("\n")).collect(Collectors.toList());
+                String inputText = builder.toString();
+
+                inputText = inputText.replace("\\n", "\n");
+                List<String> stringlist = Arrays.stream(inputText.split("\n"))
+                        .collect(Collectors.toList());
+
                 EnhancedTextDisplays.instance.handler.createCustomTextDisplay(player, name, stringlist);
                 return true;
             case "delete":
@@ -175,7 +177,7 @@ public class Command implements CommandExecutor {
                 if (displayg != null) {
                     try {
                         displayg.setBillboard(strings[2]);
-                    }catch (IllegalArgumentException e){
+                    } catch (IllegalArgumentException e) {
                         player.sendMessage(" ");
                         player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
                         player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EInvalid billboard: " + strings[2]));
@@ -233,6 +235,9 @@ public class Command implements CommandExecutor {
                 CustomTextDisplay display3 = EnhancedTextDisplays.instance.handler.getDisplayByName(strings[1]);
                 if (display3 != null) {
                     player.teleport(display3.getLocation());
+                    player.sendMessage(" ");
+                    player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] Teleported to: " + display3.getName()));
+                    player.sendMessage(" ");
                     return true;
                 }
                 player.sendMessage(" ");
@@ -245,7 +250,8 @@ public class Command implements CommandExecutor {
             case "list":
                 if (player == null)
                     return true;
-                int page = 1;
+                int page;
+                // /try list
                 if (strings.length > 1) {
                     try {
                         page = Integer.parseInt(strings[1]);
@@ -258,22 +264,29 @@ public class Command implements CommandExecutor {
                         player.sendMessage(" ");
                         return true;
                     }
+                } else {
+                    page = 1;
                 }
+                int nextpage = Math.min(page + 1, EnhancedTextDisplays.instance.handler.maxPage());
+                int prevpage = Math.max(page - 1, 1);
+                Bukkit.getLogger().info("next page is: " + nextpage);
+                Bukkit.getLogger().info("prev page is: " + prevpage);
                 List<String> list = EnhancedTextDisplays.instance.handler.getListByPage(page);
-                TextComponent header = TagBuilderGetter.get(player, "header", Map.of("{page}", String.valueOf(page)));
+                TextComponent header = TagBuilderGetter.get(player, "header", Map.of(
+                        "{page}",String.valueOf(page)
+                ));
                 player.sendMessage(header);
-                String spaces = "                        ";
-                for (String string : list) {
-                    StringBuilder spaceBuilder = new StringBuilder();
-                    for (int i = 0; i < string.length(); i++) {
-                        spaceBuilder.append(" ");
-                    }
-                    TextComponent format = TagBuilderGetter.get(player, "formattedTextDisplay", Map.of("{name}", string + spaceBuilder.toString() + spaces));
+                for (String element : list) {
+                    TextComponent format = TagBuilderGetter.get(player, "formattedTextDisplay", Map.of("{name}", element));
                     player.sendMessage(format);
                 }
-                TextComponent footer = TagBuilderGetter.get(player, "footer", Map.of("{page}", String.valueOf(page)));
+                TextComponent footer = TagBuilderGetter.get(player, "footer", Map.of(
+                        "{next-page}", String.valueOf(nextpage),
+                        "{prev-page}", String.valueOf(prevpage),
+                        "{page}", String.valueOf(page)
+                ));
                 player.sendMessage(footer);
-                break;
+                return true;
 
             case "attach":
                 if (player == null)
@@ -364,6 +377,9 @@ public class Command implements CommandExecutor {
                     try {
                         float yaw = Float.parseFloat(strings[2]);
                         display7.setYaw(yaw);
+                        player.sendMessage(" ");
+                        player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] Yaw " + yaw +" for: " + display7.getName() + " set."));
+                        player.sendMessage(" ");
                         return true;
                     } catch (NumberFormatException e) {
                         player.sendMessage(" ");
@@ -396,6 +412,9 @@ public class Command implements CommandExecutor {
                     try {
                         float pitch = Float.parseFloat(strings[2]);
                         display8.setPitch(pitch);
+                        player.sendMessage(" ");
+                        player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] Pitch " + pitch +" for: " + display8.getName() + " set."));
+                        player.sendMessage(" ");
                         return true;
                     } catch (NumberFormatException e) {
                         player.sendMessage(" ");
@@ -424,6 +443,9 @@ public class Command implements CommandExecutor {
                 CustomTextDisplay display9 = EnhancedTextDisplays.instance.handler.getDisplayByName(strings[1]);
                 if (display9 != null) {
                     display9.setRotation(Float.parseFloat(strings[2]), Float.parseFloat(strings[3]));
+                    player.sendMessage(" ");
+                    player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] Rotation for: " + display9.getName() + " set."));
+                    player.sendMessage(" ");
                     return true;
                 }
                 player.sendMessage(" ");
@@ -432,7 +454,28 @@ public class Command implements CommandExecutor {
                 player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUse: /" + command.getName() + " list"));
                 player.sendMessage(" ");
                 return true;
-
+            case "setshadow":
+                if (player == null)
+                    return true;
+                if (strings.length < 3) {
+                    player.sendMessage(" ");
+                    player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
+                    player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CBMissing argument. Specify name and background."));
+                    player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUsage: /" + command.getName() + " setshadow <name> <true|false>"));
+                    player.sendMessage(" ");
+                    return true;
+                }
+                CustomTextDisplay display101 = EnhancedTextDisplays.instance.handler.getDisplayByName(strings[1]);
+                if (display101 != null) {
+                    display101.setShadowText(Boolean.parseBoolean(strings[2]));
+                    return true;
+                }
+                player.sendMessage(" ");
+                player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
+                player.sendMessage(Utils.translateHex("  &c&l| &#D27E7ETextDisplay: " + strings[1] + " not found"));
+                player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUse: /" + command.getName() + " list"));
+                player.sendMessage(" ");
+                return true;
             case "setbackground":
                 if (player == null)
                     return true;
@@ -456,32 +499,32 @@ public class Command implements CommandExecutor {
                 player.sendMessage(" ");
                 return true;
 
-            case "settext":
-                if (player == null)
-                    return true;
-                if (strings.length < 3) {
-                    player.sendMessage(" ");
-                    player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
-                    player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CBMissing argument. Specify name and text."));
-                    player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUsage: /" + command.getName() + " settext <name> <text>"));
-                    player.sendMessage(" ");
-                    return true;
-                }
-                CustomTextDisplay display11 = EnhancedTextDisplays.instance.handler.getDisplayByName(strings[1]);
-                if (display11 != null) {
-                    StringBuilder textBuilder = new StringBuilder();
-                    for (int i = 2; i < strings.length; i++) {
-                        textBuilder.append(strings[i]).append(" ");
-                    }
-                    display11.setText(textBuilder.toString());
-                    return true;
-                }
-                player.sendMessage(" ");
-                player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
-                player.sendMessage(Utils.translateHex("  &c&l| &#D27E7ETextDisplay: " + strings[1] + " not found"));
-                player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUse: /" + command.getName() + " list"));
-                player.sendMessage(" ");
-                return true;
+//            case "settext":
+//                if (player == null)
+//                    return true;
+//                if (strings.length < 3) {
+//                    player.sendMessage(" ");
+//                    player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
+//                    player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CBMissing argument. Specify name and text."));
+//                    player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUsage: /" + command.getName() + " settext <name> <text>"));
+//                    player.sendMessage(" ");
+//                    return true;
+//                }
+//                CustomTextDisplay display11 = EnhancedTextDisplays.instance.handler.getDisplayByName(strings[1]);
+//                if (display11 != null) {
+//                    StringBuilder textBuilder = new StringBuilder();
+//                    for (int i = 2; i < strings.length; i++) {
+//                        textBuilder.append(strings[i]).append(" ");
+//                    }
+//                    display11.setText(textBuilder.toString());
+//                    return true;
+//                }
+//                player.sendMessage(" ");
+//                player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
+//                player.sendMessage(Utils.translateHex("  &c&l| &#D27E7ETextDisplay: " + strings[1] + " not found"));
+//                player.sendMessage(Utils.translateHex("  &c&l| &#D27E7EUse: /" + command.getName() + " list"));
+//                player.sendMessage(" ");
+//                return true;
 
             case "setscale":
                 if (player == null)
@@ -496,8 +539,12 @@ public class Command implements CommandExecutor {
                 }
                 CustomTextDisplay display12 = EnhancedTextDisplays.instance.handler.getDisplayByName(strings[1]);
                 if (display12 != null) {
-                    display12.setScale(Float.parseFloat(strings[2]));
-                    return  true;
+                    float f = Float.parseFloat(strings[2]);
+                    display12.setScale(f);
+                    player.sendMessage(" ");
+                    player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] Scale " +f  +" for: " + display12.getName() + " set."));
+                    player.sendMessage(" ");
+                    return true;
                 }
                 player.sendMessage(" ");
                 player.sendMessage(Utils.translateHex("               &#1e90ffMrDarkiMC's EnhancedTextDisplays"));
@@ -534,8 +581,5 @@ public class Command implements CommandExecutor {
                 player.sendMessage(" ");
                 return true;
         }
-
-
-        return true;
     }
 }

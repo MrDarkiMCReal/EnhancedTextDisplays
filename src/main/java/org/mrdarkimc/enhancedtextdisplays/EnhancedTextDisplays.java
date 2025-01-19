@@ -6,7 +6,6 @@ import org.mrdarkimc.SatanicLib.Utils;
 import org.mrdarkimc.SatanicLib.configsetups.Configs;
 import org.mrdarkimc.enhancedtextdisplays.commands.Command;
 import org.mrdarkimc.enhancedtextdisplays.displays.DisplayHandler;
-import org.mrdarkimc.enhancedtextdisplays.displays.TDisplay;
 
 public final class EnhancedTextDisplays extends JavaPlugin {
     public static EnhancedTextDisplays instance;

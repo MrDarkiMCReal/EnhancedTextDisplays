@@ -16,7 +16,6 @@ public class DisplayHandler {
     public static NamespacedKey key = new NamespacedKey(EnhancedTextDisplays.getInstance(),"EnhancedTextDisplay");
     public DisplayHandler() {
         deserealize();
-        //handleOldDisplays();
         removeOldDisplays();
         spawnDisplays();
             }
@@ -73,8 +72,7 @@ public class DisplayHandler {
         }
         Location loc = player.getLocation();
         loc.setPitch(0);
-        CustomTextDisplay textDisplay = new CustomTextDisplay(name,stringlist,loc,1);
-        map.put(name,textDisplay);
+
         EnhancedTextDisplays.config.get().set("textdisplays." + name + ".contents",stringlist);
         EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.scale",1);
         EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.billboard","fixed");
@@ -92,6 +90,8 @@ public class DisplayHandler {
         EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.yaw",player.getLocation().getYaw());
         EnhancedTextDisplays.config.get().set("textdisplays." + name + ".location.pitch",player.getLocation().getPitch());
         EnhancedTextDisplays.config.saveConfig();
+        CustomTextDisplay textDisplay = new CustomTextDisplay(name,stringlist,loc,1);
+        map.put(name,textDisplay);
         textDisplay.spawnEntity();
         return textDisplay;
     }
@@ -122,10 +122,11 @@ public class DisplayHandler {
         Bukkit.getLogger().info("[EnhancedTextDisplays] Successfully registered " + map.size() + " text-displays");
     }
     public static List<String> deserealizeContents(String key){
+        EnhancedTextDisplays.config.reloadConfig();
         List<String> list1 = EnhancedTextDisplays.config.get().getStringList("textdisplays." + key + ".contents");
         list1.replaceAll(line -> {
             Utils.translateHex(line);
-            line = line + "\n";
+            //line = line + "\n";
             PlaceholderAPI.setPlaceholders(null,line);
             return line;
         });

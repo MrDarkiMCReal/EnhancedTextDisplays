@@ -43,6 +43,9 @@ public class CustomTextDisplay implements Serializable {
     public UUID getUuid() {
         return uuid;
     }
+    public TextDisplay getDisplay(){
+        return textDisplay;
+    }
 
     ExtendedTimerTask updateTask;
 
@@ -55,7 +58,7 @@ public class CustomTextDisplay implements Serializable {
         this.name = name;
         this.contents = contents;
         this.location = location;
-        this.section = EnhancedTextDisplays.config.get().createSection("textdisplays." + name);
+        this.section = EnhancedTextDisplays.config.get().getConfigurationSection("textdisplays." + name);
         this.updateTask = setupUpdateTask();
         startTimer();
     }
@@ -110,8 +113,8 @@ public class CustomTextDisplay implements Serializable {
 
         applyText(contents);
         applyBillboard();
-        setAlightment(section.getString("settings.alignment", "center"));
-        lineWidth(section.getInt("settings.lineWidth", 250));
+        applyDefaultAlightment();
+        applyDefaultLineWidth();
         setDefaultPivotPoint();
         setDefaultScale();
     }
@@ -121,10 +124,14 @@ public class CustomTextDisplay implements Serializable {
         section.set("settings.lineWidth", width);
         EnhancedTextDisplays.config.saveConfig();
     }
+    public void applyDefaultLineWidth() {
+        textDisplay.setLineWidth(section.getInt("settings.lineWidth", 250));
+    }
+
 
     public void applyBillboard() {
-        FileConfiguration config = EnhancedTextDisplays.config.get();
-        String value = config.getString("textdisplays." + name + ".settings.billboard", "fixed");
+        //FileConfiguration config = EnhancedTextDisplays.config.get();
+        String value = section.getString("settings.billboard", "fixed");
 
         textDisplay.setBillboard(Display.Billboard.valueOf(value.toUpperCase()));
     }
@@ -149,9 +156,11 @@ public class CustomTextDisplay implements Serializable {
         Location loc = player.getLocation();
         textDisplay.teleport(loc);
         removeFromWorld();
-        spawnEntity();
         saveLocation(loc);
-        player.sendMessage(ChatColor.YELLOW + "[ETD] TextDisplay was teleported to you");
+        spawnEntity();
+        player.sendMessage(" ");
+        player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] TextDisplay was teleported to you"));
+        player.sendMessage(" ");
     }
 
     void saveLocation(Location loc) {
@@ -241,6 +250,15 @@ public class CustomTextDisplay implements Serializable {
 
     public void setBackground(boolean trueOrfalse) {
         textDisplay.setDefaultBackground(trueOrfalse);
+
+    }
+    public void setShadowText(boolean b){
+        textDisplay.setShadowed(b);
+        section.set("settings.text-shadow",b);
+        EnhancedTextDisplays.config.saveConfig();
+    }
+    public void setDefaultShadowText(){
+        textDisplay.setShadowed(section.getBoolean("settings.text-shadow",false));
     }
 
     public void setLocation(Location newlocation) {
@@ -253,15 +271,14 @@ public class CustomTextDisplay implements Serializable {
     }
 
     public void setAlightment(String alignment) {
-        try {
             TextDisplay.TextAlignment enumAlignment = TextDisplay.TextAlignment.valueOf(alignment.toUpperCase());
             textDisplay.setAlignment(enumAlignment);
-            section.set("settings.alignment", alignment.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            Bukkit.getLogger().info("[EnhancedTextDisplays] unable to set alignment: " + alignment + "\n" +
-                    "[EnhancedTextDisplays] avaliable only: CENTER LEFT RIGHT");
-            e.printStackTrace();
-        }
+            EnhancedTextDisplays.config.get().set("textdisplays." + name + ".settings.alignment", alignment.toUpperCase());
+        EnhancedTextDisplays.config.saveConfig();
+    }
+    public void applyDefaultAlightment() {
+        TextDisplay.TextAlignment enumAlignment = TextDisplay.TextAlignment.valueOf(section.getString("settings.alignment", "center").toUpperCase());
+        textDisplay.setAlignment(enumAlignment);
     }
 
     public void removeFromWorld() {
@@ -364,7 +381,7 @@ public class CustomTextDisplay implements Serializable {
                 break;
         }
         player.sendMessage(" ");
-        player.sendMessage(Utils.translateHex("  &c&l| &r&#5591CB[EnhancedTextDisplays] TextDisplay was attached to a wall"));
+        player.sendMessage(Utils.translateHex("  &#1e90ff&l| &r&#5591CB[EnhancedTextDisplays] TextDisplay was attached to a wall"));
         player.sendMessage(" ");
     }
 
